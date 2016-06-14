@@ -19,24 +19,16 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var cfgFile string
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
-	Use:   "swarmkit-client",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-// Uncomment the following line if your bare application
-// has an action associated with it:
-//	Run: func(cmd *cobra.Command, args []string) { },
+	Use:           os.Args[0],
+	Short:         "The http client for swarmkit.",
+	SilenceUsage:  true,
+	SilenceErrors: true,
 }
 
 // Execute adds all child commands to the root command sets flags appropriately.
@@ -48,31 +40,40 @@ func Execute() {
 	}
 }
 
-func init() {
-	cobra.OnInitialize(initConfig)
+func defaultSocket() string {
+	swarmSocket := os.Getenv("SWARM_SOCKET")
+	if swarmSocket != "" {
+		return swarmSocket
+	}
+	return "/var/run/docker/cluster/docker-swarmd.sock"
+}
 
+func init() {
+	// cobra.OnInitialize(initConfig)
+
+	RootCmd.PersistentFlags().StringP("socket", "s", defaultSocket(), "Socket to connect to the Swarm manager")
 	// Here you will define your flags and configuration settings.
 	// Cobra supports Persistent Flags, which, if defined here,
 	// will be global for your application.
 
-	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.swarmkit-client.yaml)")
+	// RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.swarmkit-client.yaml)")
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-	RootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// RootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 // initConfig reads in config file and ENV variables if set.
-func initConfig() {
-	if cfgFile != "" { // enable ability to specify config file via flag
-		viper.SetConfigFile(cfgFile)
-	}
+// func initConfig() {
+// 	if cfgFile != "" { // enable ability to specify config file via flag
+// 		viper.SetConfigFile(cfgFile)
+// 	}
 
-	viper.SetConfigName(".swarmkit-client") // name of config file (without extension)
-	viper.AddConfigPath("$HOME")  // adding home directory as first search path
-	viper.AutomaticEnv()          // read in environment variables that match
+// 	viper.SetConfigName(".swarmkit-client") // name of config file (without extension)
+// 	viper.AddConfigPath("$HOME")            // adding home directory as first search path
+// 	viper.AutomaticEnv()                    // read in environment variables that match
 
-	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
-	}
-}
+// 	// If a config file is found, read it in.
+// 	if err := viper.ReadInConfig(); err == nil {
+// 		fmt.Println("Using config file:", viper.ConfigFileUsed())
+// 	}
+// }
