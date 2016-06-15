@@ -20,6 +20,7 @@ var RootCmd = &cobra.Command{
 	SilenceUsage:  true,
 	SilenceErrors: true,
 	Run: func(cmd *cobra.Command, args []string) {
+		// TODO add tls support
 		var tlsConfig *tls.Config = nil
 
 		enableCors, err := cmd.Flags().GetBool("api-enable-cors")
