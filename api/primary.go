@@ -36,7 +36,8 @@ var routes = map[string]map[string]handler{
 		"/services/{serviceid:.*}/update": updateService,
 	},
 	http.MethodDelete: {
-		"/nodes/{nodeid:.*}": removeNode,
+		"/nodes/{nodeid:.*}":  removeNode,
+		"/services/{name:.*}": deleteService,
 	},
 }
 

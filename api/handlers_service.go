@@ -100,20 +100,20 @@ func createService(c *context, w http.ResponseWriter, r *http.Request) {
 func inspectService(c *context, w http.ResponseWriter, r *http.Request) {
 	var (
 		err       error
-		gsResp    *api.GetServiceResponse
+		service   *api.Service
 		lsTask    *api.ListTasksResponse
 		serviceid = mux.Vars(r)["serviceid"]
 		tasks     = make([]*api.Task, 0)
 	)
 
-	if gsResp, err = c.swarmkitAPI.GetService(ct.TODO(), &api.GetServiceRequest{ServiceID: serviceid}); err != nil {
+	if service, err = getService(ct.TODO(), c.swarmkitAPI, serviceid); err != nil {
 		errResponse(w, r, err, c)
 		return
 	}
 
 	if lsTask, err = c.swarmkitAPI.ListTasks(ct.TODO(), &api.ListTasksRequest{
 		Filters: &api.ListTasksRequest_Filters{
-			ServiceIDs: []string{gsResp.Service.ID},
+			ServiceIDs: []string{service.ID},
 		},
 	}); err != nil {
 		errResponse(w, r, err, c)
@@ -127,7 +127,7 @@ func inspectService(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	c.render.JSON(w, http.StatusOK, map[string]interface{}{
-		"service": gsResp.Service,
+		"service": service,
 		"tasks":   tasks,
 	})
 }
@@ -136,7 +136,7 @@ func inspectService(c *context, w http.ResponseWriter, r *http.Request) {
 func updateService(c *context, w http.ResponseWriter, r *http.Request) {
 	var (
 		err       error
-		gsResp    *api.GetServiceResponse
+		service   *api.Service
 		cspec     = &createSpec{}
 		serviceid = mux.Vars(r)["serviceid"]
 	)
@@ -153,12 +153,11 @@ func updateService(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if gsResp, err = c.swarmkitAPI.GetService(ct.TODO(), &api.GetServiceRequest{ServiceID: serviceid}); err != nil {
+	if service, err = getService(ct.TODO(), c.swarmkitAPI, serviceid); err != nil {
 		errResponse(w, r, err, c)
 		return
 	}
 
-	service := gsResp.Service
 	spec := service.Spec.Copy()
 	if err = merge(cspec, spec, c.swarmkitAPI); err != nil {
 		errResponse(w, r, err, c)
@@ -184,5 +183,52 @@ func updateService(c *context, w http.ResponseWriter, r *http.Request) {
 	c.render.JSON(w, http.StatusOK, map[string]interface{}{"id": usResp.Service.ID})
 }
 
-// DELETE /services/{serviceid:.*}
-func deleteService(c *context, w http.ResponseWriter, r *http.Request) {}
+// DELETE /services/{name:.*}
+func deleteService(c *context, w http.ResponseWriter, r *http.Request) {
+	var (
+		err       error
+		service   *api.Service
+		serviceid = mux.Vars(r)["name"]
+	)
+
+	if service, err = getService(ct.TODO(), c.swarmkitAPI, serviceid); err != nil {
+		errResponse(w, r, err, c)
+		return
+	}
+
+	if _, err = c.swarmkitAPI.RemoveService(ct.TODO(), &api.RemoveServiceRequest{ServiceID: service.ID}); err != nil {
+		errResponse(w, r, err, c)
+		return
+	}
+
+	c.render.JSON(w, http.StatusOK, map[string]interface{}{"name": serviceid})
+}
+
+func getService(ctx ct.Context, c api.ControlClient, input string) (*api.Service, error) {
+	// GetService to match via full ID.
+	rg, err := c.GetService(ctx, &api.GetServiceRequest{ServiceID: input})
+	if err != nil {
+		// If any error (including NotFound), ListServices to match via ID prefix and full name.
+		rl, err := c.ListServices(ctx,
+			&api.ListServicesRequest{
+				Filters: &api.ListServicesRequest_Filters{
+					Names: []string{input},
+				},
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(rl.Services) == 0 {
+			return nil, fmt.Errorf("service %s not found", input)
+		}
+
+		if l := len(rl.Services); l > 1 {
+			return nil, fmt.Errorf("service %s is ambiguous (%d matches found)", input, l)
+		}
+
+		return rl.Services[0], nil
+	}
+	return rg.Service, nil
+}
