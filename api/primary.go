@@ -30,9 +30,10 @@ var routes = map[string]map[string]handler{
 		"/services/{serviceid:.*}": inspectService,
 	},
 	http.MethodPost: {
-		"/nodes/accept":               acceptNode,
-		"/nodes/{nodeid:.*}/activate": activateNode,
-		"/services/create":            createService,
+		"/nodes/accept":                   acceptNode,
+		"/nodes/{nodeid:.*}/activate":     activateNode,
+		"/services/create":                createService,
+		"/services/{serviceid:.*}/update": updateService,
 	},
 	http.MethodDelete: {
 		"/nodes/{nodeid:.*}": removeNode,

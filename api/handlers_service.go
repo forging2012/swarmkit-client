@@ -1,11 +1,12 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
+	"reflect"
 	"strings"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarmkit/api"
 	"github.com/gorilla/mux"
 	ct "golang.org/x/net/context"
@@ -15,7 +16,7 @@ import (
 func listService(c *context, w http.ResponseWriter, r *http.Request) {
 	sresp, err := c.swarmkitAPI.ListServices(ct.TODO(), &api.ListServicesRequest{})
 	if err != nil {
-		c.render.JSON(w, http.StatusBadRequest, map[string]interface{}{"msg": err.Error()})
+		errResponse(w, r, err, c)
 		return
 	}
 
@@ -55,15 +56,13 @@ func createService(c *context, w http.ResponseWriter, r *http.Request) {
 	)
 	if err = DecoderRequest(r, cspec); err != nil {
 		err = fmt.Errorf("Parse params for create service error:%v", err)
-		log.WithFields(log.Fields{"method": r.Method, "route": r.RequestURI}).Errorln(err)
-		c.render.JSON(w, http.StatusBadRequest, map[string]interface{}{"msg": err})
+		errResponse(w, r, err, c)
 		return
 	}
 
 	if len(strings.TrimSpace(cspec.Name)) == 0 || len(strings.TrimSpace(cspec.Image)) == 0 {
-		err = fmt.Errorf("--name and --image are mandatory")
-		log.WithFields(log.Fields{"method": r.Method, "route": r.RequestURI}).Errorln(err)
-		c.render.JSON(w, http.StatusBadRequest, map[string]interface{}{"msg": err})
+		err = fmt.Errorf("name and image are mandatory")
+		errResponse(w, r, err, c)
 		return
 	}
 
@@ -81,15 +80,13 @@ func createService(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err = merge(cspec, spec, c.swarmkitAPI); err != nil {
-		log.WithFields(log.Fields{"method": r.Method, "route": r.RequestURI}).Errorln(err)
-		c.render.JSON(w, http.StatusBadRequest, map[string]interface{}{"msg": err})
+		errResponse(w, r, err, c)
 		return
 	}
 
 	var csResp *api.CreateServiceResponse
 	if csResp, err = c.swarmkitAPI.CreateService(ct.TODO(), &api.CreateServiceRequest{Spec: spec}); err != nil {
-		log.WithFields(log.Fields{"method": r.Method, "route": r.RequestURI}).Errorln(err)
-		c.render.JSON(w, http.StatusBadRequest, map[string]interface{}{"msg": err})
+		errResponse(w, r, err, c)
 		return
 	}
 
@@ -110,8 +107,7 @@ func inspectService(c *context, w http.ResponseWriter, r *http.Request) {
 	)
 
 	if gsResp, err = c.swarmkitAPI.GetService(ct.TODO(), &api.GetServiceRequest{ServiceID: serviceid}); err != nil {
-		log.WithFields(log.Fields{"method": r.Method, "route": r.RequestURI}).Errorln(err)
-		c.render.JSON(w, http.StatusBadRequest, map[string]interface{}{"msg": err})
+		errResponse(w, r, err, c)
 		return
 	}
 
@@ -120,8 +116,7 @@ func inspectService(c *context, w http.ResponseWriter, r *http.Request) {
 			ServiceIDs: []string{gsResp.Service.ID},
 		},
 	}); err != nil {
-		log.WithFields(log.Fields{"method": r.Method, "route": r.RequestURI}).Errorln(err)
-		c.render.JSON(w, http.StatusBadRequest, map[string]interface{}{"msg": err})
+		errResponse(w, r, err, c)
 		return
 	}
 
@@ -136,3 +131,58 @@ func inspectService(c *context, w http.ResponseWriter, r *http.Request) {
 		"tasks":   tasks,
 	})
 }
+
+// POST /services/{serviceid:.*}/update
+func updateService(c *context, w http.ResponseWriter, r *http.Request) {
+	var (
+		err       error
+		gsResp    *api.GetServiceResponse
+		cspec     = &createSpec{}
+		serviceid = mux.Vars(r)["serviceid"]
+	)
+
+	if len(strings.TrimSpace(serviceid)) <= 1 {
+		err = errors.New("service ID missing")
+		errResponse(w, r, err, c)
+		return
+	}
+
+	if err = DecoderRequest(r, cspec); err != nil {
+		err = fmt.Errorf("Parse params for create service error:%v", err)
+		errResponse(w, r, err, c)
+		return
+	}
+
+	if gsResp, err = c.swarmkitAPI.GetService(ct.TODO(), &api.GetServiceRequest{ServiceID: serviceid}); err != nil {
+		errResponse(w, r, err, c)
+		return
+	}
+
+	service := gsResp.Service
+	spec := service.Spec.Copy()
+	if err = merge(cspec, spec, c.swarmkitAPI); err != nil {
+		errResponse(w, r, err, c)
+		return
+	}
+
+	if reflect.DeepEqual(spec, &service.Spec) {
+		err = errors.New("no changes detected")
+		errResponse(w, r, err, c)
+		return
+	}
+
+	var usResp *api.UpdateServiceResponse
+	if usResp, err = c.swarmkitAPI.UpdateService(ct.TODO(), &api.UpdateServiceRequest{
+		ServiceID:      service.ID,
+		ServiceVersion: &service.Meta.Version,
+		Spec:           spec,
+	}); err != nil {
+		errResponse(w, r, err, c)
+		return
+	}
+
+	c.render.JSON(w, http.StatusOK, map[string]interface{}{"id": usResp.Service.ID})
+}
+
+// DELETE /services/{serviceid:.*}
+func deleteService(c *context, w http.ResponseWriter, r *http.Request) {}
