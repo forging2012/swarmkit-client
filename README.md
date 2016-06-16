@@ -90,28 +90,19 @@ curl -X GET http://localhost:8888/nodes
 
 #### service
 
-##### create service
-
 ```
+# create service
 curl -X POST -d '{"name":"redis", "image":"redis:3.0.5"}' http://localhost:8888/services/create
-{
-    "id":"7zyp89z8zefrq96jga06vho5f",
-    "meta":{
-        "version":{"index":31},
-        "created_at":{"seconds":1466053992,"nanos":848560070},
-        "updated_at":{"seconds":1466053992,"nanos":848560070}
-    },
-    "spec":{
-        "annotations":{"name":"redis"},
-        "task":{
-            "Runtime":{
-                "Container":{"image":"redis:3.0.5","mounts":null}
-            }
-        },
-        "Mode":{
-            "Replicated":{"replicas":1}
-        },
-        "endpoint":{}
-    }
-}
+
+# ls all running services
+curl -X GET http://localhost:8888/services
+
+# inspect service
+curl -X GET http://localhost:8888/services/{serviceid:.*}
+
+# update service
+curl -X POST -d '{...}' http://localhost:8888/services/{serviceid:.*}/update
+
+# delete service
+curl -X DELETE http://localhost:8888/services/7zyp89z8zefrq96jga06vho5f
 ```
