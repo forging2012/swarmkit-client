@@ -7,6 +7,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarmkit/api"
+	"github.com/gorilla/mux"
 	ct "golang.org/x/net/context"
 )
 
@@ -93,4 +94,45 @@ func createService(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	c.render.JSON(w, http.StatusOK, csResp.Service)
+}
+
+// GET /services/{serviceid:.*}?all=1
+//    all:0 only display running
+//		  1 display all
+//	  default 0
+func inspectService(c *context, w http.ResponseWriter, r *http.Request) {
+	var (
+		err       error
+		gsResp    *api.GetServiceResponse
+		lsTask    *api.ListTasksResponse
+		serviceid = mux.Vars(r)["serviceid"]
+		tasks     = make([]*api.Task, 0)
+	)
+
+	if gsResp, err = c.swarmkitAPI.GetService(ct.TODO(), &api.GetServiceRequest{ServiceID: serviceid}); err != nil {
+		log.WithFields(log.Fields{"method": r.Method, "route": r.RequestURI}).Errorln(err)
+		c.render.JSON(w, http.StatusBadRequest, map[string]interface{}{"msg": err})
+		return
+	}
+
+	if lsTask, err = c.swarmkitAPI.ListTasks(ct.TODO(), &api.ListTasksRequest{
+		Filters: &api.ListTasksRequest_Filters{
+			ServiceIDs: []string{gsResp.Service.ID},
+		},
+	}); err != nil {
+		log.WithFields(log.Fields{"method": r.Method, "route": r.RequestURI}).Errorln(err)
+		c.render.JSON(w, http.StatusBadRequest, map[string]interface{}{"msg": err})
+		return
+	}
+
+	for _, t := range lsTask.Tasks {
+		if t.Status.State == api.TaskStateRunning {
+			tasks = append(tasks, t)
+		}
+	}
+
+	c.render.JSON(w, http.StatusOK, map[string]interface{}{
+		"service": gsResp.Service,
+		"tasks":   tasks,
+	})
 }

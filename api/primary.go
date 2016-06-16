@@ -24,9 +24,10 @@ type handler func(c *context, w http.ResponseWriter, r *http.Request)
 
 var routes = map[string]map[string]handler{
 	http.MethodGet: {
-		"/nodes":             listNodes,
-		"/nodes/{nodeid:.*}": inspectNode,
-		"/services":          listService,
+		"/nodes":                   listNodes,
+		"/nodes/{nodeid:.*}":       inspectNode,
+		"/services":                listService,
+		"/services/{serviceid:.*}": inspectService,
 	},
 	http.MethodPost: {
 		"/nodes/accept":               acceptNode,
