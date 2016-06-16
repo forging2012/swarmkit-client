@@ -11,8 +11,6 @@ import (
 	ct "golang.org/x/net/context"
 )
 
-// Node OP
-
 // GET /nodes
 func listNodes(c *context, w http.ResponseWriter, r *http.Request) {
 	lsNodeRes, err := c.swarmkitAPI.ListNodes(ct.TODO(), &api.ListNodesRequest{})
