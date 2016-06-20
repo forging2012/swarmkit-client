@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -65,16 +66,82 @@ func inspectNode(c *context, w http.ResponseWriter, r *http.Request) {
 	c.render.JSON(w, http.StatusBadRequest, map[string]interface{}{"node": node, "tasks": tasks})
 }
 
-// POST /nodes/accept
+// POST /nodes/{nodeid:.*}/accept
 func acceptNode(c *context, w http.ResponseWriter, r *http.Request) {
+	var (
+		err    error
+		node   *api.Node
+		nodeid = mux.Vars(r)["nodeid"]
+	)
+	if node, err = swarmkit.GetNode(ct.TODO(), c.swarmkitAPI, nodeid); err != nil {
+		errResponse(w, r, err, c)
+	}
+	spec := &node.Spec
+	if spec.Membership == api.NodeMembershipAccepted {
+		errResponse(w, r, fmt.Errorf("Node %s was already accepted", nodeid), c)
+		return
+	}
 
+	spec.Membership = api.NodeMembershipAccepted
+	if _, err = c.swarmkitAPI.UpdateNode(ct.TODO(), &api.UpdateNodeRequest{
+		NodeID:      node.ID,
+		NodeVersion: &node.Meta.Version,
+		Spec:        spec,
+	}); err != nil {
+		errResponse(w, r, err, c)
+		return
+	}
+	c.render.JSON(w, http.StatusOK, "{}")
 }
 
 // DELETE /nodes/{nodeid:.*}
-func removeNode(c *context, w http.ResponseWriter, r *http.Request) {}
+func removeNode(c *context, w http.ResponseWriter, r *http.Request) {
+	var (
+		err    error
+		node   *api.Node
+		nodeid = mux.Vars(r)["nodeid"]
+	)
+
+	if node, err = swarmkit.GetNode(ct.TODO(), c.swarmkitAPI, nodeid); err != nil {
+		errResponse(w, r, err, c)
+		return
+	}
+
+	if _, err = c.swarmkitAPI.RemoveNode(ct.TODO(), &api.RemoveNodeRequest{NodeID: node.ID}); err != nil {
+		errResponse(w, r, err, c)
+		return
+	}
+	c.render.JSON(w, http.StatusOK, nodeid)
+}
 
 // POST /nodes/{nodeid:.*}/activate
-func activateNode(c *context, w http.ResponseWriter, r *http.Request) {}
+func activateNode(c *context, w http.ResponseWriter, r *http.Request) {
+	var (
+		err    error
+		node   *api.Node
+		nodeid = mux.Vars(r)["nodeid"]
+	)
+	if node, err = swarmkit.GetNode(ct.TODO(), c.swarmkitAPI, nodeid); err != nil {
+		errResponse(w, r, err, c)
+		return
+	}
+
+	spec := &node.Spec
+	if spec.Availability == api.NodeAvailabilityActive {
+		errResponse(w, r, fmt.Errorf("Node %s is already active", nodeid), c)
+		return
+	}
+
+	if _, err = c.swarmkitAPI.UpdateNode(ct.TODO(), &api.UpdateNodeRequest{
+		NodeID:      node.ID,
+		NodeVersion: &node.Meta.Version,
+		Spec:        spec,
+	}); err != nil {
+		errResponse(w, r, err, c)
+		return
+	}
+	c.render.JSON(w, http.StatusOK, nodeid)
+}
 
 func optionsHandler(c *context, w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)

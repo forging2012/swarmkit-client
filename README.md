@@ -24,10 +24,13 @@ curl -X GET http://localhost:8888/nodes
 curl -X GET http://localhost:8888/nodes/{nodeid:.*}?all=1
 
 # accept node
-curl -X POST http://localhost:8888/nodes/accept
+curl -X POST http://localhost:8888/nodes/{nodeid:.*}/accept
 
 # remove node
-// DELETE /nodes/{nodeid:.*}
+curl -X DELETE http://localhost:8888/nodes/{nodeid:.*}
+
+# activate node
+ curl -X POST /nodes/{nodeid:.*}/activate
 ```
 
 #### service
