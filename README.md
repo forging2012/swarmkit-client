@@ -14,7 +14,6 @@ swarmkit-client -s /tmp/manager1/swarm.sock
 
 #### node
 
-##### ls node
 
 ```
 # ls all nodes
@@ -52,7 +51,7 @@ curl -X POST -d '{...}' http://localhost:8888/services/{serviceid:.*}/update
 curl -X DELETE http://localhost:8888/services/7zyp89z8zefrq96jga06vho5f
 ```
 
-### tasks
+#### tasks
 
 ```
 # list tasks
@@ -70,7 +69,7 @@ curl -X GET http://localhost:8888/tasks/{taskid:.*}
 curl -X DELETE http://localhost:8888//tasts/{taskid:.*}
 ```
 
-### networks
+#### networks
 
 ```
 # list networks
@@ -86,7 +85,7 @@ curl -X POST -d '{...}' http://localhost:8888/networks/creat
 curl -X DELETE http://localhost:8888/networks/{networkid:.*}
 ```
 
-### clusters
+#### clusters
 
 ```
 # list clusters
