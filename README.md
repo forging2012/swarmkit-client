@@ -69,3 +69,32 @@ curl -X GET http://localhost:8888/tasks/{taskid:.*}
 # remove task
 curl -X DELETE http://localhost:8888//tasts/{taskid:.*}
 ```
+
+### networks
+
+```
+# list networks
+curl -X GET http://localhost:8888/networks
+
+# inspect networks
+curl -X GET http://localhost:8888/networks/{networkid:.*}
+
+# create networks
+curl -X POST -d '{...}' http://localhost:8888/networks/creat
+
+# remove networks
+curl -X DELETE http://localhost:8888/networks/{networkid:.*}
+```
+
+### clusters
+
+```
+# list clusters
+curl -X GET http://localhost:8888/clusters
+
+# inspect cluster
+curl -X GET http://localhost:8888/clusters/{clusterid:.*}
+
+# update cluster
+curl -X POST -d '{...}' http://localhost:8888/clusters/{clusterid:.*}/update
+```

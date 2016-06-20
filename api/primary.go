@@ -32,6 +32,8 @@ var routes = map[string]map[string]handler{
 		"/tasks/{taskid:.*}":       inspectTasks,
 		"/networks":                listNetworks,
 		"/networks/{networkid:.*}": inspectNetworks,
+		"/clusters":                listClusters,
+		"/clusters/{clusterid:.*}": inspectClusters,
 	},
 	http.MethodPost: {
 		"/nodes/accept":                   acceptNode,
@@ -39,6 +41,7 @@ var routes = map[string]map[string]handler{
 		"/services/create":                createService,
 		"/services/{serviceid:.*}/update": updateService,
 		"/networks/creat":                 createNetworks,
+		"/clusters/{clusterid:.*}/update": updateClusters,
 	},
 	http.MethodDelete: {
 		"/nodes/{nodeid:.*}":       removeNode,
