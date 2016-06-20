@@ -30,17 +30,21 @@ var routes = map[string]map[string]handler{
 		"/services/{serviceid:.*}": inspectService,
 		"/tasks":                   listTasks,
 		"/tasks/{taskid:.*}":       inspectTasks,
+		"/networks":                listNetworks,
+		"/networks/{networkid:.*}": inspectNetworks,
 	},
 	http.MethodPost: {
 		"/nodes/accept":                   acceptNode,
 		"/nodes/{nodeid:.*}/activate":     activateNode,
 		"/services/create":                createService,
 		"/services/{serviceid:.*}/update": updateService,
+		"/networks/creat":                 createNetworks,
 	},
 	http.MethodDelete: {
-		"/nodes/{nodeid:.*}":  removeNode,
-		"/services/{name:.*}": removeService,
-		"/tasts/{taskid:.*}":  removeTasks,
+		"/nodes/{nodeid:.*}":       removeNode,
+		"/services/{name:.*}":      removeService,
+		"/tasts/{taskid:.*}":       removeTasks,
+		"/networks/{networkid:.*}": removeNetworks,
 	},
 }
 
