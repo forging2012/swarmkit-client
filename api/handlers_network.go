@@ -105,7 +105,23 @@ func createNetworks(c *context, w http.ResponseWriter, r *http.Request) {
 }
 
 // DELETE /networks/{networkid:.*}
-func removeNetworks(c *context, w http.ResponseWriter, r *http.Request) {}
+func removeNetworks(c *context, w http.ResponseWriter, r *http.Request) {
+	var (
+		err       error
+		network   *api.Network
+		networkid = mux.Vars(r)["networkid"]
+	)
+	if network, err = swarmkit.GetNetwork(ct.TODO(), c.swarmkitAPI, networkid); err != nil {
+		errResponse(w, r, err, c)
+		return
+	}
+
+	if _, err = c.swarmkitAPI.RemoveNetwork(ct.TODO(), &api.RemoveNetworkRequest{NetworkID: network.ID}); err != nil {
+		errResponse(w, r, err, c)
+		return
+	}
+	c.render.JSON(w, http.StatusOK, networkid)
+}
 
 type networkInfo struct {
 	Name       string            `json:"name"`
