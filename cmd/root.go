@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/shenshouer/swarmkit-client/api"
-
+	"github.com/shenshouer/swarmkit-client/swarmkit"
 	"github.com/spf13/cobra"
 )
 
@@ -31,12 +31,12 @@ var RootCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		socker, err := cmd.Flags().GetString("socket")
+		socket, err := cmd.Flags().GetString("socket")
 		if err != nil {
 			log.Fatal(err)
 		}
 		server := api.NewServer(host, tlsConfig)
-		swarmkitAPI, err := api.Dial(socker)
+		swarmkitAPI, err := swarmkit.Dial(socket)
 		if err != nil {
 			log.Fatal(err)
 		}
