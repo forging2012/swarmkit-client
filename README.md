@@ -48,3 +48,21 @@ curl -X POST -d '{...}' http://localhost:8888/services/{serviceid:.*}/update
 # delete service
 curl -X DELETE http://localhost:8888/services/7zyp89z8zefrq96jga06vho5f
 ```
+
+### tasks
+
+```
+# list tasks
+# GET /tasks?all=1&quiet=1
+    all:0 only display running
+		  1 display all
+	  default 0
+curl -X GET http://localhost:8888/tasks?all=1&quiet=1
+
+
+# inspect task
+curl -X GET http://localhost:8888/tasks/{taskid:.*}
+
+# remove task
+curl -X DELETE http://localhost:8888//tasts/{taskid:.*}
+```
